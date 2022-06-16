@@ -6193,15 +6193,12 @@ havoc_stage:
     stage_cur_val    = use_stacking;
  
     for (i = 0; i < use_stacking; i++) {
-
-      if (!mutator_arm)
+      if (!(extras_cnt + a_extras_cnt)) mutator_arm %= 15;
+      
+      switch (mutator_arm)
       {
 
         /* Unit mutator */
-
-        switch (UR(11))
-        {
-
         case 0:
 
           /* Flip a single bit somewhere. Spooky! */
@@ -6386,14 +6383,11 @@ havoc_stage:
 
           out_buf[UR(temp_len)] ^= 1 + UR(255);
           break;
-        }
-      }
-      else
-      {
+        
+     
         /* Chunk mutator */
 
-        switch (11 + UR(4 + (extras_cnt + a_extras_cnt) ? 2 : 0))
-        {
+        
 
         case 11 ... 12:
         {
@@ -6598,7 +6592,7 @@ havoc_stage:
           break;
         }
         }
-      }
+      
     }
 
     if (common_fuzz_stuff(argv, out_buf, temp_len))
