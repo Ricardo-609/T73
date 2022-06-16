@@ -6392,7 +6392,7 @@ havoc_stage:
       {
         /* Chunk mutator */
 
-        switch (11 + UR(4))
+        switch (11 + UR(4 + (extras_cnt + a_extras_cnt) ? 2 : 0)))
         {
 
         case 11 ... 12:
@@ -6500,13 +6500,7 @@ havoc_stage:
 
           break;
         }
-        }
-      }
-      else
-      {
-        switch (15 + UR((extras_cnt + a_extras_cnt) ? 2 : 0))
-        {
-          /* Values 15 and 16 can be selected only if there are any extras
+        /* Values 15 and 16 can be selected only if there are any extras
            present in the dictionaries. */
 
         case 15:
@@ -6605,7 +6599,6 @@ havoc_stage:
         }
         }
       }
-
     }
 
     if (common_fuzz_stuff(argv, out_buf, temp_len))
