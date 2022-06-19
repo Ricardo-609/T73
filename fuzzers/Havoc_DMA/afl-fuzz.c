@@ -6195,8 +6195,7 @@ havoc_stage:
     for (i = 0; i < use_stacking; i++) {
       if (!(extras_cnt + a_extras_cnt)) mutator_arm %= 2;
       
-      if (!mutator_arm)
-      {
+      if (!mutator_arm) {
 
         switch (UR(11)) {
 
@@ -6587,7 +6586,7 @@ havoc_stage:
         
     }
       
-  }
+
 
     if (common_fuzz_stuff(argv, out_buf, temp_len))
       goto abandon_entry;
