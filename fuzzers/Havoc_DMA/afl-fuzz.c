@@ -199,7 +199,8 @@ EXP_ST u64 total_crashes,             /* Total number of crashes          */
            bytes_trim_in,             /* Bytes coming into the trimmer    */
            bytes_trim_out,            /* Bytes coming outa the trimmer    */
            blocks_eff_total,          /* Blocks subject to effector maps  */
-           blocks_eff_select;         /* Blocks selected as fuzzable      */
+           blocks_eff_select,         /* Blocks selected as fuzzable      */
+           last_edge_log_time;            /* Time for most recent log edge coverage computation (s)   */
 
 static u32 subseq_tmouts;             /* Number of timeouts in a row      */
 
@@ -239,6 +240,8 @@ static s32 cpu_aff = -1;       	      /* Selected CPU core                */
 #endif /* HAVE_AFFINITY */
 
 static FILE* plot_file;               /* Gnuplot output file              */
+
+static FILE* edge_log_file;         /* edge log file */
 
 struct queue_entry {
 
@@ -1371,7 +1374,22 @@ static void cull_queue(void) {
     mark_as_redundant(q, !q->favored);
     q = q->next;
   }
-
+  if (get_cur_time()/1000 - last_edge_log_time > 300){
+    fprintf(edge_log_file, "edge cov %d ", count_non_255_bytes(virgin_bits)); 
+    time_t now;
+    struct tm *tm;
+    now = time(0);
+    if((tm = localtime (&now)) == NULL) {
+        printf("Error extracting time stuff\n");
+    }
+    else{
+        fprintf(edge_log_file, "%04d-%02d-%02d %02d:%02d:%02d\n",
+            tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday,
+            tm->tm_hour, tm->tm_min, tm->tm_sec);
+    } 
+    fflush(edge_log_file);  
+    last_edge_log_time = get_cur_time()/1000;
+  }
 }
 
 
@@ -7351,6 +7369,13 @@ EXP_ST void setup_dirs_fds(void) {
                      "unique_hangs, max_depth, execs_per_sec\n");
                      /* ignore errors */
 
+  tmp = alloc_printf("%s/edge_log", out_dir);
+  fd = open(tmp, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (fd < 0) PFATAL("Unable to create '%s'", tmp);
+  ck_free(tmp);
+
+  edge_log_file = fdopen(fd, "w");
+  if (!edge_log_file) PFATAL("fdopen() failed");
 }
 
 
@@ -8285,6 +8310,7 @@ stop_fuzzing:
   }
 
   fclose(plot_file);
+  fclose(edge_log_file);
   destroy_queue();
   destroy_extras();
   ck_free(target_path);
