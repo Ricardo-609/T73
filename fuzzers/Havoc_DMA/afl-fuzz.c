@@ -97,6 +97,7 @@ EXP_ST u8 *in_dir,                    /* Input directory with test cases  */
           *out_file,                  /* File to fuzz, if any             */
           *out_dir,                   /* Working & output directory       */
           *sync_dir,                  /* Synchronization directory        */
+          *information_file_name,     /* Information file name            */
           *sync_id,                   /* Fuzzer ID                        */
           *use_banner,                /* Display banner                   */
           *in_bitmap,                 /* Input bitmap                     */
@@ -143,6 +144,7 @@ EXP_ST u8  skip_deterministic,        /* Skip deterministic stages?       */
 static s32 out_fd,                    /* Persistent fd for out_file       */
            dev_urandom_fd = -1,       /* Persistent fd for /dev/urandom   */
            dev_null_fd = -1,          /* Persistent fd for /dev/null      */
+           information_fd,            /* Persistent fd for out-file       */
            fsrv_ctl_fd,               /* Fork server control pipe (write) */
            fsrv_st_fd;                /* Fork server status pipe (read)   */
 
@@ -241,7 +243,9 @@ static s32 cpu_aff = -1;       	      /* Selected CPU core                */
 
 static FILE* plot_file;               /* Gnuplot output file              */
 
-static FILE* edge_log_file;         /* edge log file */
+static FILE* edge_log_file;           /* edge log file                    */
+
+static FILE* information_file;        /* Information output file          */
 
 struct queue_entry {
 
@@ -295,6 +299,8 @@ static u32 a_extras_cnt;              /* Total number of tokens available */
 static u8* (*post_handler)(u8* buf, u32* len);
 
 static u8 log_info[LOG_INFO_LEN];
+
+u64 start_record;
 
 static Bandit* stack_bandit;
 static Bandit* mutator_bandit[HAVOC_STACK_POW2];
@@ -810,6 +816,44 @@ static void mark_as_redundant(struct queue_entry* q, u8 state) {
 
 }
 
+/* Setup the information file fds.*/
+EXP_ST void setup_information_fds(void) {
+
+  ACTF("Setup information file...");
+
+  information_file_name = alloc_printf("%s/information_of_havoc", out_dir);
+  information_fd = open(information_file_name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (information_fd < 0) PFATAL("Unable to create '%s'.", information_file_name);
+
+  information_file = fdopen(information_fd, "a");
+  if (!information_file) PFATAL("Fdopen information file failed.");
+                     /* ignore errors */
+}
+
+/* Write information to output file*/
+static void write_to_information_file(u8* items_name) {
+
+  if(!strcmp(items_name,"start")){
+
+    fprintf(information_file, "Time:%llu Cksum:%u Stage_max:%d ", start_record, queue_cur->exec_cksum, stage_max);
+
+  }
+  else if(!strcmp(items_name,"end")){
+
+    fprintf(information_file, "Final_stage_max:%d\n", stage_max);
+
+  }
+  else{
+
+    u32 temp_cksum;
+
+    temp_cksum = hash32(trace_bits, MAP_SIZE, HASH_CONST);
+
+    fprintf(information_file, "Find:%d,%u ", stage_cur, temp_cksum);
+
+  }
+
+}
 
 /* Append new test case to the queue. */
 
@@ -842,6 +886,10 @@ static void add_to_queue(u8* fname, u32 len, u8 passed_det) {
     q_prev100->next_100 = q;
     q_prev100 = q;
 
+  }
+
+  if(!strncmp(stage_name, "havoc", 5) || !strncmp(stage_name, "splice", 6)){
+    write_to_information_file("find");
   }
 
   last_path_time = get_cur_time();
@@ -5057,6 +5105,8 @@ static u8 fuzz_one(char** argv) {
 
   u8  ret_val = 1, doing_det = 0;
 
+  start_record = get_cur_time_us();
+  
   u8  a_collect[MAX_AUTO_EXTRA];
   u32 a_len = 0;
 
@@ -6193,6 +6243,8 @@ havoc_stage:
 
   if (stage_max < HAVOC_MIN) stage_max = HAVOC_MIN;
 
+  write_to_information_file("start");
+
   temp_len = len;
 
   orig_hit_cnt = queued_paths + unique_crashes;
@@ -6662,6 +6714,8 @@ else
 
   new_hit_cnt = queued_paths + unique_crashes;
 
+  write_to_information_file("end");
+
   if (!splice_cycle) {
     stage_finds[STAGE_HAVOC]  += new_hit_cnt - orig_hit_cnt;
     stage_cycles[STAGE_HAVOC] += stage_max;
@@ -6782,7 +6836,7 @@ abandon_entry:
   if (in_buf != orig_in) ck_free(in_buf);
   ck_free(out_buf);
   ck_free(eff_map);
-
+  
   return ret_val;
 
 #undef FLIP_BIT
@@ -8172,6 +8226,7 @@ int main(int argc, char** argv) {
   init_count_class16();
 
   setup_dirs_fds();
+  setup_information_fds();
   read_testcases();
   load_auto();
 
