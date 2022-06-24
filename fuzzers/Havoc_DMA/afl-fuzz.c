@@ -6269,7 +6269,7 @@ havoc_stage:
 if (!mutator_arm)
 {
     /* Replace */
-    switch (UR(4 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+    switch (UR(6 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
     {
 
     case 0:
@@ -6502,7 +6502,7 @@ else if (mutator_arm == 1)
 }
 else
 {
-    switch (1 + UR(6 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+    switch (1 + UR(4 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
     {
         /* Values 15 and 16 can be selected only if there are any extras
          present in the dictionaries. */
