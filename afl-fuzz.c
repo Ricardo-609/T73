@@ -6864,7 +6864,7 @@ havoc_stage:
       {
         /* Chunk mutator */
 
-        switch (11 + UR(4 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+        switch (11 + UR(4 + ((extras_cnt + a_extras_cnt) ? 2 : 0)))
         {
 
         case 11 ... 12:
