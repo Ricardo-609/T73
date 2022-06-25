@@ -6671,7 +6671,7 @@ havoc_stage:
       if (!mutator_arm)
       {
         /* Replace */
-        switch (UR(6 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+        switch (UR(6))
         {
 
         case 0:
@@ -6769,54 +6769,12 @@ havoc_stage:
 
           break;
         }
-        case 6: // 15
-        {
-
-          /* Overwrite bytes with an extra. */
-
-          if (!extras_cnt || (a_extras_cnt && UR(2)))
-          {
-
-            /* No user-specified extras or odds in our favor. Let's use an
-            auto-detected one. */
-
-            u32 use_extra = UR(a_extras_cnt);
-            u32 extra_len = a_extras[use_extra].len;
-            u32 insert_at;
-
-            if (extra_len > temp_len)
-              break;
-
-            insert_at = UR(temp_len - extra_len + 1);
-            memcpy(out_buf + insert_at, a_extras[use_extra].data, extra_len);
-          }
-          else
-          {
-
-            /* No auto extras or odds in our favor. Use the dictionary. */
-
-            u32 use_extra = UR(extras_cnt);
-            u32 extra_len = extras[use_extra].len;
-            u32 insert_at;
-
-            if (extra_len > temp_len)
-              break;
-
-            insert_at = UR(temp_len - extra_len + 1);
-            memcpy(out_buf + insert_at, extras[use_extra].data, extra_len);
-          }
-
-          break;
-        }
         }
       }
-      else if (mutator_arm == 1)
+      else
       {
-        /* Delete */
-
-        switch (1 + UR(5))
+        switch (1 + UR(9))
         {
-
         case 1: // 4
 
           /* Randomly subtract from byte. */
@@ -6824,7 +6782,14 @@ havoc_stage:
           out_buf[UR(temp_len)] -= 1 + UR(ARITH_MAX);
           break;
 
-        case 2: // 6
+        case 2: // 5
+
+          /* Randomly add to byte. */
+
+          out_buf[UR(temp_len)] += 1 + UR(ARITH_MAX);
+          break;
+
+        case 3: // 6
 
           /* Randomly subtract from word, random endian. */
 
@@ -6850,72 +6815,7 @@ havoc_stage:
 
           break;
 
-        case 3: // 8
-
-          /* Randomly subtract from dword, random endian. */
-
-          if (temp_len < 4)
-            break;
-
-          if (UR(2))
-          {
-
-            u32 pos = UR(temp_len - 3);
-
-            *(u32 *)(out_buf + pos) -= 1 + UR(ARITH_MAX);
-          }
-          else
-          {
-
-            u32 pos = UR(temp_len - 3);
-            u32 num = 1 + UR(ARITH_MAX);
-
-            *(u32 *)(out_buf + pos) =
-                SWAP32(SWAP32(*(u32 *)(out_buf + pos)) - num);
-          }
-
-          break;
-        case 4 ... 5: // 11 ... 12:
-        {
-
-          /* Delete bytes. We're making this a bit more likely
-             than insertion (the next option) in hopes of keeping
-             files reasonably small. */
-
-          u32 del_from, del_len;
-
-          if (temp_len < 2)
-            break;
-
-          /* Don't delete too much. */
-
-          del_len = choose_block_len(temp_len - 1);
-
-          del_from = UR(temp_len - del_len + 1);
-
-          memmove(out_buf + del_from, out_buf + del_from + del_len,
-                  temp_len - del_from - del_len);
-
-          temp_len -= del_len;
-
-          break;
-        }
-        }
-      }
-      else
-      {
-        switch (1 + UR(4 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
-        {
-          /* Values 15 and 16 can be selected only if there are any extras
-           present in the dictionaries. */
-        case 1: // 5
-
-          /* Randomly add to byte. */
-
-          out_buf[UR(temp_len)] += 1 + UR(ARITH_MAX);
-          break;
-
-        case 2: // 7
+        case 4: // 7
 
           /* Randomly add to word, random endian. */
 
@@ -6941,7 +6841,33 @@ havoc_stage:
 
           break;
 
-        case 3: // 9
+        case 5: // 8
+
+          /* Randomly subtract from dword, random endian. */
+
+          if (temp_len < 4)
+            break;
+
+          if (UR(2))
+          {
+
+            u32 pos = UR(temp_len - 3);
+
+            *(u32 *)(out_buf + pos) -= 1 + UR(ARITH_MAX);
+          }
+          else
+          {
+
+            u32 pos = UR(temp_len - 3);
+            u32 num = 1 + UR(ARITH_MAX);
+
+            *(u32 *)(out_buf + pos) =
+                SWAP32(SWAP32(*(u32 *)(out_buf + pos)) - num);
+          }
+
+          break;
+
+        case 6: // 9
 
           /* Randomly add to dword, random endian. */
 
@@ -6967,7 +6893,35 @@ havoc_stage:
 
           break;
 
-        case 4: // 13
+        case 7 ... 8: // 11 ... 12:
+        {
+
+          /* Delete bytes. We're making this a bit more likely
+             than insertion (the next option) in hopes of keeping
+             files reasonably small. */
+
+          u32 del_from, del_len;
+
+          if (temp_len < 2)
+            break;
+
+          /* Don't delete too much. */
+
+          del_len = choose_block_len(temp_len - 1);
+
+          del_from = UR(temp_len - del_len + 1);
+
+          memmove(out_buf + del_from, out_buf + del_from + del_len,
+                  temp_len - del_from - del_len);
+
+          temp_len -= del_len;
+
+          break;
+        }
+          /* Values 15 and 16 can be selected only if there are any extras
+           present in the dictionaries. */
+
+        case 9: // 13
 
           if (temp_len + HAVOC_BLK_XL < MAX_FILE)
           {
@@ -7017,61 +6971,6 @@ havoc_stage:
           }
 
           break;
-
-        case 5: // 16
-        {
-
-          u32 use_extra, extra_len, insert_at = UR(temp_len + 1);
-          u8 *new_buf;
-
-          /* Insert an extra. Do the same dice-rolling stuff as for the
-             previous case. */
-
-          if (!extras_cnt || (a_extras_cnt && UR(2)))
-          {
-
-            use_extra = UR(a_extras_cnt);
-            extra_len = a_extras[use_extra].len;
-
-            if (temp_len + extra_len >= MAX_FILE)
-              break;
-
-            new_buf = ck_alloc_nozero(temp_len + extra_len);
-
-            /* Head */
-            memcpy(new_buf, out_buf, insert_at);
-
-            /* Inserted part */
-            memcpy(new_buf + insert_at, a_extras[use_extra].data, extra_len);
-          }
-          else
-          {
-
-            use_extra = UR(extras_cnt);
-            extra_len = extras[use_extra].len;
-
-            if (temp_len + extra_len >= MAX_FILE)
-              break;
-
-            new_buf = ck_alloc_nozero(temp_len + extra_len);
-
-            /* Head */
-            memcpy(new_buf, out_buf, insert_at);
-
-            /* Inserted part */
-            memcpy(new_buf + insert_at, extras[use_extra].data, extra_len);
-          }
-
-          /* Tail */
-          memcpy(new_buf + insert_at + extra_len, out_buf + insert_at,
-                 temp_len - insert_at);
-
-          ck_free(out_buf);
-          out_buf = new_buf;
-          temp_len += extra_len;
-
-          break;
-        }
         }
       }
     }
