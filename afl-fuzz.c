@@ -6671,7 +6671,7 @@ havoc_stage:
       if (!mutator_arm)
       {
         /* Replace */
-        switch (UR(6 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+        switch (UR(6)) //+ ((extras_cnt + a_extras_cnt) ? 1 : 0)
         {
 
         case 0:
@@ -6766,45 +6766,6 @@ havoc_stage:
           else
             memset(out_buf + copy_to,
                    UR(2) ? UR(256) : out_buf[UR(temp_len)], copy_len);
-
-          break;
-        }
-        case 6: // 15
-        {
-
-          /* Overwrite bytes with an extra. */
-
-          if (!extras_cnt || (a_extras_cnt && UR(2)))
-          {
-
-            /* No user-specified extras or odds in our favor. Let's use an
-            auto-detected one. */
-
-            u32 use_extra = UR(a_extras_cnt);
-            u32 extra_len = a_extras[use_extra].len;
-            u32 insert_at;
-
-            if (extra_len > temp_len)
-              break;
-
-            insert_at = UR(temp_len - extra_len + 1);
-            memcpy(out_buf + insert_at, a_extras[use_extra].data, extra_len);
-          }
-          else
-          {
-
-            /* No auto extras or odds in our favor. Use the dictionary. */
-
-            u32 use_extra = UR(extras_cnt);
-            u32 extra_len = extras[use_extra].len;
-            u32 insert_at;
-
-            if (extra_len > temp_len)
-              break;
-
-            insert_at = UR(temp_len - extra_len + 1);
-            memcpy(out_buf + insert_at, extras[use_extra].data, extra_len);
-          }
 
           break;
         }
@@ -6904,7 +6865,7 @@ havoc_stage:
       }
       else
       {
-        switch (1 + UR(4 + ((extras_cnt + a_extras_cnt) ? 1 : 0)))
+        switch (1 + UR(4)) //+ ((extras_cnt + a_extras_cnt) ? 1 : 0)
         {
           /* Values 15 and 16 can be selected only if there are any extras
            present in the dictionaries. */
@@ -7017,61 +6978,6 @@ havoc_stage:
           }
 
           break;
-
-        case 5: // 16
-        {
-
-          u32 use_extra, extra_len, insert_at = UR(temp_len + 1);
-          u8 *new_buf;
-
-          /* Insert an extra. Do the same dice-rolling stuff as for the
-             previous case. */
-
-          if (!extras_cnt || (a_extras_cnt && UR(2)))
-          {
-
-            use_extra = UR(a_extras_cnt);
-            extra_len = a_extras[use_extra].len;
-
-            if (temp_len + extra_len >= MAX_FILE)
-              break;
-
-            new_buf = ck_alloc_nozero(temp_len + extra_len);
-
-            /* Head */
-            memcpy(new_buf, out_buf, insert_at);
-
-            /* Inserted part */
-            memcpy(new_buf + insert_at, a_extras[use_extra].data, extra_len);
-          }
-          else
-          {
-
-            use_extra = UR(extras_cnt);
-            extra_len = extras[use_extra].len;
-
-            if (temp_len + extra_len >= MAX_FILE)
-              break;
-
-            new_buf = ck_alloc_nozero(temp_len + extra_len);
-
-            /* Head */
-            memcpy(new_buf, out_buf, insert_at);
-
-            /* Inserted part */
-            memcpy(new_buf + insert_at, extras[use_extra].data, extra_len);
-          }
-
-          /* Tail */
-          memcpy(new_buf + insert_at + extra_len, out_buf + insert_at,
-                 temp_len - insert_at);
-
-          ck_free(out_buf);
-          out_buf = new_buf;
-          temp_len += extra_len;
-
-          break;
-        }
         }
       }
     }
