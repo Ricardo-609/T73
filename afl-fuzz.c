@@ -6655,7 +6655,7 @@ havoc_stage:
   {
 
     u32 stack_num = select_maximum_arms(stack_bandit);
-    u32 mutator_arm = select_maximum_arms(mutator_bandit[stack_num]);
+    
 
     bandit_log(stack_bandit);
     // bandit_log(mutator_bandit);
@@ -6665,7 +6665,7 @@ havoc_stage:
 
     for (i = 0; i < use_stacking; i++)
     {
-
+      u32 mutator_arm = select_maximum_arms(mutator_bandit[stack_num]);
       // switch (UR(15 + ((extras_cnt + a_extras_cnt) ? 2 : 0)))
       if (((extras_cnt + a_extras_cnt) ? 2 : 0) == 0)
         mutator_arm %= 15;
