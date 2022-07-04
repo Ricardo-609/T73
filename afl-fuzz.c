@@ -200,8 +200,8 @@ EXP_ST u64 total_crashes, /* Total number of crashes          */
     bytes_trim_in,        /* Bytes coming into the trimmer    */
     bytes_trim_out,       /* Bytes coming outa the trimmer    */
     blocks_eff_total,     /* Blocks subject to effector maps  */
-    blocks_eff_select,    /* Blocks selected as fuzzable      */
-    last_edge_log_time;   /* Time for most recent log edge coverage computation (s)   */
+    blocks_eff_select;    /* Blocks selected as fuzzable      */
+                          // last_edge_log_time;   /* Time for most recent log edge coverage computation (s)   */
 
 static u32 subseq_tmouts; /* Number of timeouts in a row      */
 
@@ -6657,7 +6657,7 @@ havoc_stage:
     u32 stack_num = select_maximum_arms(stack_bandit);
     u32 mutator_arm = select_maximum_arms(mutator_bandit[stack_num]);
 
-    bandit_log(stack_bandit);
+    // bandit_log(stack_bandit);
     // bandit_log(mutator_bandit);
 
     u32 use_stacking = 1 << (1 + stack_num);
@@ -8672,11 +8672,11 @@ int main(int argc, char **argv)
       usage(argv[0]);
     }
 
-  if (!bandit_log_path)
-  {
-    bandit_log_path = (char *)malloc(strlen(out_dir) + strlen("/bandit-info.log") + 10);
-    sprintf(bandit_log_path, "%s%s", out_dir, "/bandit-info.log");
-  }
+  // if (!bandit_log_path)
+  // {
+  //   bandit_log_path = (char *)malloc(strlen(out_dir) + strlen("/bandit-info.log") + 10);
+  //   sprintf(bandit_log_path, "%s%s", out_dir, "/bandit-info.log");
+  // }
 
   if (optind == argc || !in_dir || !out_dir)
     usage(argv[0]);
