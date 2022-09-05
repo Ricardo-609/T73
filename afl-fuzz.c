@@ -7143,20 +7143,21 @@ havoc_stage:
     update_arms(mutator_arm, reward, mutator_bandit[stack_num]);
   }
 
-  new_hit_cnt = queued_paths + unique_crashes;
+exit_havoc:
+    new_hit_cnt = queued_paths + unique_crashes;
 
-  write_to_information_file("end");
+    write_to_information_file("end");
 
-  if (!splice_cycle)
-  {
-    stage_finds[STAGE_HAVOC] += new_hit_cnt - orig_hit_cnt;
-    stage_cycles[STAGE_HAVOC] += stage_max;
-  }
-  else
-  {
-    stage_finds[STAGE_SPLICE] += new_hit_cnt - orig_hit_cnt;
-    stage_cycles[STAGE_SPLICE] += stage_max;
-  }
+    if (!splice_cycle)
+    {
+      stage_finds[STAGE_HAVOC] += new_hit_cnt - orig_hit_cnt;
+      stage_cycles[STAGE_HAVOC] += stage_max;
+    }
+    else
+    {
+      stage_finds[STAGE_SPLICE] += new_hit_cnt - orig_hit_cnt;
+      stage_cycles[STAGE_SPLICE] += stage_max;
+    }
 
 #ifndef IGNORE_FINDS
 
