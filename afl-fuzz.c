@@ -875,7 +875,7 @@ static void write_to_information_file(u8 *items_name)
   if (!strcmp(items_name, "start"))
   {
 
-    fprintf(information_file, "Time:%llu Cksum:%u Stage_max:%d ", start_record, queue_cur->exec_cksum, stage_max);
+    fprintf(information_file, "Cksum:%u Stage_max:%d ", queue_cur->exec_cksum, stage_max);
   }
   else if (!strcmp(items_name, "end"))
   {
