@@ -7145,7 +7145,7 @@ havoc_stage:
 
   new_hit_cnt = queued_paths + unique_crashes;
 
-  // write_to_information_file("end");
+  write_to_information_file("end");
 
   if (!splice_cycle)
   {
