@@ -5437,7 +5437,7 @@ static u8 fuzz_one(char **argv)
 
   s32 len, fd, temp_len, i, j;
   u8 *in_buf, *out_buf, *orig_in, *ex_tmp, *eff_map = 0;
-  u64 havoc_queued, orig_hit_cnt, new_hit_cnt;
+  u64 havoc_queued, orig_hit_cnt, new_hit_cnt, start_record, end_record, record_time;
   u32 splice_cycle = 0, perf_score = 100, orig_perf, prev_cksum, eff_cnt = 1;
 
   u8 ret_val = 1, doing_det = 0;
@@ -7286,6 +7286,11 @@ abandon_entry:
     ck_free(in_buf);
   ck_free(out_buf);
   ck_free(eff_map);
+
+  end_record = get_cur_time_us();
+  record_time = end_record - start_record;
+
+  write_to_time_file(record_time);
 
   return ret_val;
 
