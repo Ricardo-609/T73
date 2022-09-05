@@ -864,7 +864,7 @@ EXP_ST void setup_information_fds(void)
 
 /* Write information to time file*/
 static void write_to_time_file(u64 record_time) {
-    fprintf(time_file, "State:%d Time:%llu\n", state_of_fuzz, record_time);
+    fprintf(time_file, "Time:%llu\n", record_time);
 
 }
 
