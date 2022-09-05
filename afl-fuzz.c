@@ -97,6 +97,7 @@ EXP_ST u8 *in_dir,          /* Input directory with test cases  */
     *out_dir,               /* Working & output directory       */
     *sync_dir,              /* Synchronization directory        */
     *information_file_name, /* Information file name            */
+    *time_file_name,        /* Time file name                   */
     *sync_id,               /* Fuzzer ID                        */
     *use_banner,            /* Display banner                   */
     *in_bitmap,             /* Input bitmap                     */
@@ -144,6 +145,7 @@ static s32 out_fd,       /* Persistent fd for out_file       */
     dev_urandom_fd = -1, /* Persistent fd for /dev/urandom   */
     dev_null_fd = -1,    /* Persistent fd for /dev/null      */
     information_fd,      /* Persistent fd for out-file       */
+    time_fd,             /* Persistent fd for time file      */
     fsrv_ctl_fd,         /* Fork server control pipe (write) */
     fsrv_st_fd;          /* Fork server status pipe (read)   */
 
@@ -240,7 +242,9 @@ static s32 cpu_aff = -1; /* Selected CPU core                */
 
 #endif /* HAVE_AFFINITY */
 
-static FILE *plot_file; /* Gnuplot output file              */
+static FILE *plot_file, /* Gnuplot output file              */
+            *time_file,               /* Time output file                 */
+            *information_file;        /* Information output file          */
 
 // static FILE *edge_log_file; /* edge log file                    */
 
@@ -827,6 +831,20 @@ static void mark_as_redundant(struct queue_entry *q, u8 state)
   ck_free(fn);
 }
 
+/* Setup the time file fds.*/
+EXP_ST void setup_time_fds(void) {
+
+  ACTF("Setup time file...");
+
+  time_file_name = alloc_printf("%s/information_of_time", out_dir);
+  time_fd = open(time_file_name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  if (time_fd < 0) PFATAL("Unable to create '%s'.", time_file_name);
+
+  time_file = fdopen(time_fd, "a");
+  if (!time_file) PFATAL("Fdopen time file failed.");
+                     /* ignore errors */
+}
+
 /* Setup the information file fds.*/
 EXP_ST void setup_information_fds(void)
 {
@@ -842,6 +860,12 @@ EXP_ST void setup_information_fds(void)
   if (!information_file)
     PFATAL("Fdopen information file failed.");
   /* ignore errors */
+}
+
+/* Write information to time file*/
+static void write_to_time_file(u64 record_time) {
+    fprintf(time_file, "State:%d Time:%llu\n", state_of_fuzz, record_time);
+
 }
 
 /* Write information to output file*/
@@ -906,9 +930,9 @@ static void add_to_queue(u8 *fname, u32 len, u8 passed_det)
     q_prev100 = q;
   }
 
-  // if(!strncmp(stage_name, "havoc", 5) || !strncmp(stage_name, "splice", 6)){
-  //   write_to_information_file("find");
-  // }
+  if(!strncmp(stage_name, "havoc", 5) || !strncmp(stage_name, "splice", 6)){
+    write_to_information_file("find");
+  }
 
   last_path_time = get_cur_time();
 }
@@ -4213,6 +4237,14 @@ static void maybe_delete_out_dir(void)
     goto dir_cleanup_failed;
   ck_free(fn);
 
+  fn = alloc_printf("%s/information_of_havoc", out_dir);
+  if (unlink(fn) && errno != ENOENT) goto dir_cleanup_failed;
+  ck_free(fn);
+
+  fn = alloc_printf("%s/information_of_time", out_dir);
+  if (unlink(fn) && errno != ENOENT) goto dir_cleanup_failed;
+  ck_free(fn);
+
   OKF("Output dir cleanup successful.");
 
   /* Wow... is that all? If yes, celebrate! */
@@ -6640,7 +6672,7 @@ havoc_stage:
   if (stage_max < HAVOC_MIN)
     stage_max = HAVOC_MIN;
 
-  // write_to_information_file("start");
+  write_to_information_file("start");
 
   temp_len = len;
 
@@ -8749,7 +8781,8 @@ int main(int argc, char **argv)
   init_count_class16();
 
   setup_dirs_fds();
-  // setup_information_fds();
+  setup_information_fds();
+  setup_time_fds();
   read_testcases();
   load_auto();
 
